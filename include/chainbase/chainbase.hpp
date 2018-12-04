@@ -46,6 +46,7 @@ namespace chainbase {
    namespace bfs = boost::filesystem;
    using std::unique_ptr;
    using std::vector;
+   using std::map;
 
    template<typename T>
    using allocator = bip::allocator<T, bip::managed_mapped_file::segment_manager>;
@@ -904,6 +905,22 @@ namespace chainbase {
              auto itr = idx.find( key );
              if( itr == idx.end() ) return nullptr;
              return &*itr;
+         }
+         
+         template< typename ObjectType, typename IndexedByType, typename CompatibleKey , typename ScopeName>
+         void mapfind( CompatibleKey&& code , CompatibleKey&& table , map<ScopeName,ObjectType*> &all_table_info)const
+         {
+             CHAINBASE_REQUIRE_READ_LOCK("find", ObjectType);
+             typedef typename get_index_type< ObjectType >::type index_type;
+             const auto& idx = get_index< index_type >().indices().template get< IndexedByType >();
+
+             for(auto itr = idx.begin();itr != idx.end(); ++itr)
+             {
+                 if(itr->code == code && itr->table == table)
+                 {
+                    all_table_info[itr->scope] = ((ObjectType*)(&*itr));
+                 }
+             }
          }
 
          template< typename ObjectType, typename IndexedByType, typename CompatibleKey >
